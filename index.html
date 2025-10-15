@@ -423,8 +423,9 @@
         function buildUrl(base) {
             const params = [];
             if (season) params.push(`season=${encodeURIComponent(season)}`);
-            if (Array.isArray(episodes)) {
-                episodes.forEach(e => params.push(`episode[]=${encodeURIComponent(e)}`));
+            if (Array.isArray(episodes) && episodes.length > 0) {
+                // Для сериалов используем параметр episode (без [])
+                episodes.forEach(e => params.push(`episode=${encodeURIComponent(e)}`));
             }
             if (voiceover) params.push(`voiceover=${encodeURIComponent(voiceover)}`);
             if (!params.length) return base;
@@ -502,25 +503,54 @@
             const status = document.getElementById('status');
             const frame = document.getElementById('player');
             
-            // Логируем параметры для отладки
+            // Логируем все параметры для отладки
+            console.log('=== MINIAPP DEBUG ===');
             console.log('Init params:', { iframeUrl, kp, imdb, season, voiceover, episodes });
+            console.log('URL params:', window.location.search);
+            console.log('All URL params:', Object.fromEntries(new URLSearchParams(window.location.search)));
+            
+            // Проверяем наличие критических параметров для сериалов
+            if (!iframeUrl && kp && !season) {
+                console.warn('⚠️ ВНИМАНИЕ: Для сериала указан kp, но отсутствует season!');
+                console.warn('Это может быть причиной черного экрана');
+            }
+            
+            if (!iframeUrl && !kp && !imdb) {
+                console.error('❌ ОШИБКА: Не указан ни один источник видео!');
+            }
             
             // Отображаем информацию о фильме
             displayMovieInfo();
             
             try {
                 let url = iframeUrl;
-                if (!url && kp) url = `https://vibix.org/embed-kp/${encodeURIComponent(kp)}`;
-                if (!url && imdb) url = `https://vibix.org/embed-imdb/${encodeURIComponent(imdb)}`;
+                
+                // Проверяем наличие параметров
+                if (!url && kp) {
+                    url = `https://vibix.org/embed-kp/${encodeURIComponent(kp)}`;
+                    console.log('Using KP URL:', url);
+                }
+                if (!url && imdb) {
+                    url = `https://vibix.org/embed-imdb/${encodeURIComponent(imdb)}`;
+                    console.log('Using IMDB URL:', url);
+                }
+                
                 if (!url) {
+                    console.error('No video source found!', { kp, imdb, iframeUrl });
                     throw new Error('Не указан источник видео (kp, imdb или iframe)');
                 }
                 
+                // Строим финальный URL с параметрами сериала
+                const originalUrl = url;
                 url = buildUrl(url);
+                console.log('Original URL:', originalUrl);
                 console.log('Final player URL:', url);
+                console.log('Built URL params:', { season, episodes, voiceover });
+                console.log('URL changed:', originalUrl !== url ? 'YES' : 'NO');
                 
                 // Показываем статус загрузки
                 status.textContent = 'Загрузка плеера...';
+                status.style.display = 'block';
                 
                 // Устанавливаем src для iframe
                 frame.src = url;
@@ -532,11 +562,23 @@
                     status.style.display = 'none';
                 };
                 
+                // Обработчик ошибки загрузки iframe
+                frame.onerror = (error) => {
+                    console.error('Player load error:', error);
+                    loader.style.display = 'none';
+                    status.textContent = '❌ Ошибка загрузки плеера';
+                    status.style.color = '#ff6b6b';
+                    status.style.display = 'block';
+                };
+                
                 // Таймаут на случай если onload не сработает
                 setTimeout(() => {
-                    loader.style.display = 'none';
-                    status.style.display = 'none';
-                }, 3000);
+                    if (loader.style.display !== 'none') {
+                        console.log('Player load timeout reached');
+                        loader.style.display = 'none';
+                        status.style.display = 'none';
+                    }
+                }, 5000);
                 
             } catch (e) {
                 console.error('Init error:', e);
