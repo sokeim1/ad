@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KINO HD - Загрузка</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            color: white;
+        }
+        .loader-container {
+            text-align: center;
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+        .loader {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid #4ecdc4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .error {
+            color: #ff6b6b;
+            background: rgba(255,107,107,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="loader-container">
+        <div class="loader"></div>
+        <p id="status">Проверка доступа...</p>
+        <div id="error" class="error" style="display: none;"></div>
+    </div>
+
+    <script>
+        function getParam(name) {
+            const url = new URL(window.location.href);
+            return url.searchParams.get(name);
+        }
+
+        async function validateAndRedirect() {
+            const status = document.getElementById('status');
+            const error = document.getElementById('error');
+            
+            try {
+                // Получаем параметры безопасности
+                const user_id = getParam('user_id');
+                const content_type = getParam('content_type');
+                const content_id = getParam('content_id');
+                const expires = getParam('expires');
+                const signature = getParam('signature');
+                const is_premium = getParam('is_premium');
+                
+                if (!user_id || !content_type || !content_id || !expires || !signature) {
+                    throw new Error('Неверные параметры ссылки');
+                }
+                
+                // Проверяем срок действия
+                if (Date.now() / 1000 > parseInt(expires)) {
+                    throw new Error('Ссылка устарела. Вернитесь в бот за новой ссылкой.');
+                }
+                
+                status.textContent = 'Загрузка контента...';
+                
+                // Определяем параметры для плеера на основе content_id
+                let playerParams = {};
+                
+                if (content_type === 'movie') {
+                    // Для фильмов используем kp или imdb
+                    if (content_id.startsWith('kp_')) {
+                        playerParams.kp = content_id.replace('kp_', '');
+                    } else if (content_id.startsWith('imdb_')) {
+                        playerParams.imdb = content_id.replace('imdb_', '');
+                    } else {
+                        // Пробуем как kp
+                        playerParams.kp = content_id;
+                    }
+                } else if (content_type === 'episode') {
+                    // Для эпизодов парсим content_id
+                    const parts = content_id.split('_');
+                    if (parts.length >= 3) {
+                        const [series_id, season, episode] = parts;
+                        if (series_id.startsWith('kp')) {
+                            playerParams.kp = series_id.replace('kp', '');
+                        } else if (series_id.startsWith('imdb')) {
+                            playerParams.imdb = series_id.replace('imdb', '');
+                        }
+                        playerParams.season = season;
+                        playerParams['episode[]'] = episode;
+                    }
+                }
+                
+                // Формируем URL для плеера
+                const playerUrl = new URL('./index.html', window.location.href);
+                Object.keys(playerParams).forEach(key => {
+                    playerUrl.searchParams.set(key, playerParams[key]);
+                });
+                
+                status.textContent = 'Перенаправление...';
+                
+                // Перенаправляем на плеер
+                window.location.href = playerUrl.toString();
+                
+            } catch (e) {
+                console.error('Validation error:', e);
+                error.textContent = e.message;
+                error.style.display = 'block';
+                status.textContent = 'Ошибка загрузки';
+            }
+        }
+        
+        // Запускаем валидацию
+        validateAndRedirect();
+    </script>
+</body>
+</html>
