@@ -210,6 +210,90 @@
             50% { opacity: 1; transform: scale(1); }
         }
 
+        .movie-info {
+            margin: 15px 0;
+            padding: 15px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+            display: none;
+        }
+
+        .movie-info.visible {
+            display: block;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .movie-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #fff;
+            text-align: left;
+        }
+
+        .movie-meta {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(255,255,255,0.1);
+            padding: 5px 10px;
+            border-radius: 8px;
+        }
+
+        .rating {
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        .year {
+            color: #4ecdc4;
+        }
+
+        .quality {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        .genre-list {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .genre-tag {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            color: #fff;
+        }
+
+        .movie-description {
+            font-size: 0.9rem;
+            line-height: 1.4;
+            color: rgba(255,255,255,0.9);
+            text-align: left;
+            margin-top: 10px;
+            max-height: 60px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
         @media (max-width: 768px) {
             .main-card {
                 padding: 15px;
@@ -244,6 +328,24 @@
                 padding: 5px;
                 gap: 10px;
             }
+
+            .movie-title {
+                font-size: 1.1rem;
+            }
+
+            .movie-meta {
+                font-size: 0.85rem;
+                gap: 8px;
+            }
+
+            .meta-item {
+                padding: 4px 8px;
+            }
+
+            .genre-tag {
+                font-size: 0.8rem;
+                padding: 3px 10px;
+            }
         }
     </style>
 </head>
@@ -260,6 +362,25 @@
             <h1 class="title">KINO HD - ПЛЕЕР</h1>
             <div class="loader" id="loader"></div>
             <p id="status" style="margin: 10px 0; font-size: 14px; opacity: 0.8;"></p>
+            
+            <!-- Информация о фильме -->
+            <div id="movieInfo" class="movie-info">
+                <div class="movie-title" id="movieTitle"></div>
+                <div class="movie-meta">
+                    <div class="meta-item" id="ratingBlock" style="display: none;">
+                        <span class="rating" id="movieRating"></span>
+                    </div>
+                    <div class="meta-item" id="yearBlock" style="display: none;">
+                        <span class="year" id="movieYear"></span>
+                    </div>
+                    <div class="meta-item" id="qualityBlock" style="display: none;">
+                        <span class="quality" id="movieQuality"></span>
+                    </div>
+                </div>
+                <div class="genre-list" id="genreList"></div>
+                <div class="movie-description" id="movieDescription"></div>
+            </div>
+            
             <iframe id="player" class="frame" allowfullscreen referrerpolicy="no-referrer"></iframe>
             
             <div class="buttons-container">
@@ -290,6 +411,14 @@
         const season = getParam('season');
         const voiceover = getParam('voiceover');
         const episodes = getAllParam('episode[]');
+        
+        // Параметры информации о фильме
+        const movieTitle = getParam('title');
+        const movieRating = getParam('rating');
+        const movieYear = getParam('year');
+        const movieQuality = getParam('quality');
+        const movieGenres = getParam('genres');
+        const movieDescription = getParam('description');
 
         function buildUrl(base) {
             const params = [];
@@ -303,6 +432,71 @@
             return base + sep + params.join('&');
         }
 
+        function displayMovieInfo() {
+            const movieInfoBlock = document.getElementById('movieInfo');
+            const titleEl = document.getElementById('movieTitle');
+            const ratingEl = document.getElementById('movieRating');
+            const ratingBlock = document.getElementById('ratingBlock');
+            const yearEl = document.getElementById('movieYear');
+            const yearBlock = document.getElementById('yearBlock');
+            const qualityEl = document.getElementById('movieQuality');
+            const qualityBlock = document.getElementById('qualityBlock');
+            const genreListEl = document.getElementById('genreList');
+            const descriptionEl = document.getElementById('movieDescription');
+
+            let hasInfo = false;
+
+            // Название
+            if (movieTitle) {
+                titleEl.textContent = decodeURIComponent(movieTitle);
+                hasInfo = true;
+            }
+
+            // Рейтинг
+            if (movieRating && movieRating !== 'null' && movieRating !== '0') {
+                ratingEl.textContent = `⭐ ${movieRating}`;
+                ratingBlock.style.display = 'flex';
+                hasInfo = true;
+            }
+
+            // Год
+            if (movieYear && movieYear !== 'null') {
+                yearEl.textContent = `📅 ${movieYear}`;
+                yearBlock.style.display = 'flex';
+                hasInfo = true;
+            }
+
+            // Качество
+            if (movieQuality && movieQuality !== 'null') {
+                qualityEl.textContent = `🎬 ${movieQuality}`;
+                qualityBlock.style.display = 'flex';
+                hasInfo = true;
+            }
+
+            // Жанры
+            if (movieGenres && movieGenres !== 'null') {
+                const genres = decodeURIComponent(movieGenres).split(',');
+                genres.forEach(genre => {
+                    const tag = document.createElement('span');
+                    tag.className = 'genre-tag';
+                    tag.textContent = genre.trim();
+                    genreListEl.appendChild(tag);
+                });
+                hasInfo = true;
+            }
+
+            // Описание
+            if (movieDescription && movieDescription !== 'null') {
+                descriptionEl.textContent = decodeURIComponent(movieDescription);
+                hasInfo = true;
+            }
+
+            // Показываем блок если есть хоть какая-то информация
+            if (hasInfo) {
+                movieInfoBlock.classList.add('visible');
+            }
+        }
+
         async function init() {
             const loader = document.getElementById('loader');
             const status = document.getElementById('status');
@@ -310,6 +504,9 @@
             
             // Логируем параметры для отладки
             console.log('Init params:', { iframeUrl, kp, imdb, season, voiceover, episodes });
+            
+            // Отображаем информацию о фильме
+            displayMovieInfo();
             
             try {
                 let url = iframeUrl;
