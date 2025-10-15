@@ -308,29 +308,45 @@
             const status = document.getElementById('status');
             const frame = document.getElementById('player');
             
+            // Логируем параметры для отладки
+            console.log('Init params:', { iframeUrl, kp, imdb, season, voiceover, episodes });
+            
             try {
                 let url = iframeUrl;
                 if (!url && kp) url = `https://vibix.org/embed-kp/${encodeURIComponent(kp)}`;
                 if (!url && imdb) url = `https://vibix.org/embed-imdb/${encodeURIComponent(imdb)}`;
-                if (!url) throw new Error('no_source');
+                if (!url) {
+                    throw new Error('Не указан источник видео (kp, imdb или iframe)');
+                }
                 
                 url = buildUrl(url);
+                console.log('Final player URL:', url);
                 
                 // Показываем статус загрузки
-                status.textContent = 'Загрузка...';
+                status.textContent = 'Загрузка плеера...';
                 
                 // Устанавливаем src для iframe
                 frame.src = url;
                 
-                // Скрываем лоадер после небольшой задержки
+                // Обработчик загрузки iframe
+                frame.onload = () => {
+                    console.log('Player loaded successfully');
+                    loader.style.display = 'none';
+                    status.style.display = 'none';
+                };
+                
+                // Таймаут на случай если onload не сработает
                 setTimeout(() => {
                     loader.style.display = 'none';
                     status.style.display = 'none';
-                }, 1000);
+                }, 3000);
                 
             } catch (e) {
+                console.error('Init error:', e);
                 loader.style.display = 'none';
-                status.style.display = 'none';
+                status.textContent = `❌ Ошибка: ${e.message}`;
+                status.style.color = '#ff6b6b';
+                status.style.display = 'block';
             }
         }
         init();
