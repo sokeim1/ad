@@ -672,16 +672,16 @@
                 params.push(`voiceover=${encodeURIComponent(voiceover)}`);
             }
             
+            // Добавляем параметры кастомизации плеера
+            params.push('nopreload');  // Легковесная интеграция - загружается картинка вместо плеера до клика
+            params.push('poster');     // Превью - заставка перед началом воспроизведения
+            params.push('design=1');   // Дизайн плеера: 1 - По умолчанию
+            
             if (!params.length) return base;
             const sep = base.includes('?') ? '&' : '?';
             return base + sep + params.join('&');
         }
 
-        function addPlayerDesign(url) {
-            // Добавляем дизайн "Синий Неон" к URL плеера
-            const separator = url.includes('?') ? '&' : '?';
-            return url + separator + 'design=3';
-        }
 
         function displayPoster() {
             const posterContainer = document.getElementById('posterContainer');
@@ -981,9 +981,6 @@
                 // Строим финальный URL с параметрами сериала
                 const originalUrl = url;
                 url = buildUrl(url);
-                
-                // Добавляем дизайн "Синий Неон"
-                url = addPlayerDesign(url);
                 
                 console.log('Original URL:', originalUrl);
                 console.log('Final player URL:', url);
