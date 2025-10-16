@@ -636,25 +636,25 @@
             // Переопределяем requestFullscreen для всех элементов
             if (Element.prototype.requestFullscreen) {
                 Element.prototype.requestFullscreen = function() {
-                    console.log('⚠️ Native fullscreen blocked, using custom method');
-                    // Вместо стандартного fullscreen вызываем наш
-                    tryAlternativeFullscreen();
+                    console.log('⚠️ Native fullscreen blocked, using toggle method');
+                    // Вместо стандартного fullscreen вызываем toggle
+                    toggleFullscreen();
                     return Promise.resolve();
                 };
             }
             
             if (Element.prototype.webkitRequestFullscreen) {
                 Element.prototype.webkitRequestFullscreen = function() {
-                    console.log('⚠️ WebKit fullscreen blocked, using custom method');
-                    tryAlternativeFullscreen();
+                    console.log('⚠️ WebKit fullscreen blocked, using toggle method');
+                    toggleFullscreen();
                     return Promise.resolve();
                 };
             }
             
             if (Element.prototype.mozRequestFullScreen) {
                 Element.prototype.mozRequestFullScreen = function() {
-                    console.log('⚠️ Mozilla fullscreen blocked, using custom method');
-                    tryAlternativeFullscreen();
+                    console.log('⚠️ Mozilla fullscreen blocked, using toggle method');
+                    toggleFullscreen();
                     return Promise.resolve();
                 };
             }
@@ -1271,13 +1271,12 @@
                 
                 // Скрываем все остальные элементы
                 document.querySelectorAll('body > *:not(#player)').forEach(el => {
-                    if (el.id !== 'player' && el.id !== 'exitFullscreenBtn') {
+                    if (el.id !== 'player') {
                         el.style.display = 'none';
                     }
                 });
                 
-                // Добавляем кнопку выхода
-                addExitButton();
+                // НЕ добавляем кнопку выхода - пользователь выйдет через кнопку плеера
             }
             
             // Попытка через Telegram WebApp API
@@ -1322,55 +1321,6 @@
             }
         }
         
-        function addExitButton() {
-            // Удаляем существующую кнопку если есть
-            const existingBtn = document.getElementById('exitFullscreenBtn');
-            if (existingBtn) {
-                existingBtn.remove();
-            }
-            
-            const exitBtn = document.createElement('button');
-            exitBtn.id = 'exitFullscreenBtn';
-            exitBtn.innerHTML = '✕ Выход';
-            exitBtn.style.cssText = `
-                position: fixed !important;
-                top: 10px !important;
-                right: 10px !important;
-                z-index: 1000000 !important;
-                background: rgba(0,0,0,0.8) !important;
-                color: white !important;
-                border: 2px solid rgba(255,255,255,0.5) !important;
-                border-radius: 8px !important;
-                padding: 10px 20px !important;
-                font-size: 16px !important;
-                font-weight: bold !important;
-                cursor: pointer !important;
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                gap: 5px !important;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important;
-                touch-action: manipulation !important;
-                -webkit-tap-highlight-color: transparent !important;
-            `;
-            
-            // Добавляем визуальную обратную связь при нажатии
-            exitBtn.addEventListener('touchstart', () => {
-                exitBtn.style.background = 'rgba(255,255,255,0.3) !important';
-            });
-            
-            exitBtn.addEventListener('touchend', () => {
-                exitBtn.style.background = 'rgba(0,0,0,0.8) !important';
-            });
-            
-            exitBtn.onclick = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                restoreNormalView();
-            };
-            
-            document.body.appendChild(exitBtn);
-        }
         
         function restoreNormalView() {
             console.log('Restoring normal view');
@@ -1396,16 +1346,8 @@
             
             // Показываем все скрытые элементы
             document.querySelectorAll('body > *').forEach(el => {
-                if (el.id !== 'exitFullscreenBtn') {
-                    el.style.display = '';
-                }
+                el.style.display = '';
             });
-            
-            // Удаляем кнопку выхода
-            const exitBtn = document.getElementById('exitFullscreenBtn');
-            if (exitBtn) {
-                exitBtn.remove();
-            }
         }
         
         function handleFullscreenChange() {
