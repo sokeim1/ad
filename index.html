@@ -294,6 +294,146 @@
             text-overflow: ellipsis;
         }
 
+        .poster-container {
+            position: relative;
+            width: 120px;
+            height: 180px;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 0 auto 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            display: none;
+        }
+
+        .poster-container.visible {
+            display: block;
+            animation: posterFadeIn 0.6s ease-out;
+        }
+
+        .movie-poster {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 12px;
+        }
+
+        .poster-placeholder {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: rgba(255,255,255,0.7);
+        }
+
+        @keyframes posterFadeIn {
+            from { opacity: 0; transform: scale(0.9) translateY(-10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .extended-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .info-item {
+            background: rgba(255,255,255,0.08);
+            padding: 8px 12px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .info-label {
+            font-size: 0.75rem;
+            opacity: 0.7;
+            margin-bottom: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-value {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .progress-container {
+            margin: 15px 0;
+            padding: 12px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            display: none;
+        }
+
+        .progress-container.visible {
+            display: block;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .progress-label {
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+            opacity: 0.9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4ecdc4, #45b7d1);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 20px;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3));
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-20px); }
+            100% { transform: translateX(20px); }
+        }
+
+        .continue-button {
+            background: linear-gradient(45deg, #4ecdc4, #45b7d1);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            color: white;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .continue-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(78, 205, 196, 0.3);
+        }
+
         @media (max-width: 768px) {
             .main-card {
                 padding: 15px;
@@ -363,6 +503,26 @@
             <div class="loader" id="loader"></div>
             <p id="status" style="margin: 10px 0; font-size: 14px; opacity: 0.8;"></p>
             
+            <!-- Постер фильма -->
+            <div id="posterContainer" class="poster-container">
+                <img id="moviePoster" class="movie-poster" alt="Постер фильма">
+                <div id="posterPlaceholder" class="poster-placeholder">🎬</div>
+            </div>
+
+            <!-- Прогресс просмотра -->
+            <div id="progressContainer" class="progress-container">
+                <div class="progress-label">
+                    <span>Продолжить просмотр</span>
+                    <button id="continueButton" class="continue-button">Продолжить</button>
+                </div>
+                <div class="progress-bar">
+                    <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+                </div>
+                <div style="font-size: 0.75rem; opacity: 0.7; margin-top: 5px;">
+                    <span id="progressTime">0:00 / 0:00</span>
+                </div>
+            </div>
+
             <!-- Информация о фильме -->
             <div id="movieInfo" class="movie-info">
                 <div class="movie-title" id="movieTitle"></div>
@@ -379,6 +539,26 @@
                 </div>
                 <div class="genre-list" id="genreList"></div>
                 <div class="movie-description" id="movieDescription"></div>
+                
+                <!-- Расширенная информация -->
+                <div class="extended-info" id="extendedInfo">
+                    <div class="info-item" id="durationBlock" style="display: none;">
+                        <div class="info-label">Длительность</div>
+                        <div class="info-value" id="movieDuration">—</div>
+                    </div>
+                    <div class="info-item" id="countryBlock" style="display: none;">
+                        <div class="info-label">Страна</div>
+                        <div class="info-value" id="movieCountry">—</div>
+                    </div>
+                    <div class="info-item" id="directorBlock" style="display: none;">
+                        <div class="info-label">Режиссер</div>
+                        <div class="info-value" id="movieDirector">—</div>
+                    </div>
+                    <div class="info-item" id="ageRatingBlock" style="display: none;">
+                        <div class="info-label">Возраст</div>
+                        <div class="info-value" id="movieAgeRating">—</div>
+                    </div>
+                </div>
             </div>
             
             <iframe id="player" class="frame" allowfullscreen referrerpolicy="no-referrer"></iframe>
@@ -419,6 +599,11 @@
         const movieQuality = getParam('quality');
         const movieGenres = getParam('genres');
         const movieDescription = getParam('description');
+        const moviePoster = getParam('poster');
+        const movieDuration = getParam('duration');
+        const movieCountry = getParam('country');
+        const movieDirector = getParam('director');
+        const movieAgeRating = getParam('age_rating');
 
         function buildUrl(base) {
             const params = [];
@@ -433,6 +618,30 @@
             return base + sep + params.join('&');
         }
 
+        function displayPoster() {
+            const posterContainer = document.getElementById('posterContainer');
+            const posterImg = document.getElementById('moviePoster');
+            const posterPlaceholder = document.getElementById('posterPlaceholder');
+
+            if (moviePoster && moviePoster !== 'null') {
+                posterImg.src = decodeURIComponent(moviePoster);
+                posterImg.onload = () => {
+                    posterPlaceholder.style.display = 'none';
+                    posterImg.style.display = 'block';
+                    posterContainer.classList.add('visible');
+                };
+                posterImg.onerror = () => {
+                    posterPlaceholder.style.display = 'flex';
+                    posterImg.style.display = 'none';
+                    posterContainer.classList.add('visible');
+                };
+            } else {
+                posterPlaceholder.style.display = 'flex';
+                posterImg.style.display = 'none';
+                posterContainer.classList.add('visible');
+            }
+        }
+
         function displayMovieInfo() {
             const movieInfoBlock = document.getElementById('movieInfo');
             const titleEl = document.getElementById('movieTitle');
@@ -444,6 +653,16 @@
             const qualityBlock = document.getElementById('qualityBlock');
             const genreListEl = document.getElementById('genreList');
             const descriptionEl = document.getElementById('movieDescription');
+
+            // Расширенная информация
+            const durationEl = document.getElementById('movieDuration');
+            const durationBlock = document.getElementById('durationBlock');
+            const countryEl = document.getElementById('movieCountry');
+            const countryBlock = document.getElementById('countryBlock');
+            const directorEl = document.getElementById('movieDirector');
+            const directorBlock = document.getElementById('directorBlock');
+            const ageRatingEl = document.getElementById('movieAgeRating');
+            const ageRatingBlock = document.getElementById('ageRatingBlock');
 
             let hasInfo = false;
 
@@ -492,10 +711,136 @@
                 hasInfo = true;
             }
 
+            // Длительность
+            if (movieDuration && movieDuration !== 'null') {
+                durationEl.textContent = `${movieDuration} мин`;
+                durationBlock.style.display = 'block';
+                hasInfo = true;
+            }
+
+            // Страна
+            if (movieCountry && movieCountry !== 'null') {
+                countryEl.textContent = decodeURIComponent(movieCountry);
+                countryBlock.style.display = 'block';
+                hasInfo = true;
+            }
+
+            // Режиссер
+            if (movieDirector && movieDirector !== 'null') {
+                directorEl.textContent = decodeURIComponent(movieDirector);
+                directorBlock.style.display = 'block';
+                hasInfo = true;
+            }
+
+            // Возрастной рейтинг
+            if (movieAgeRating && movieAgeRating !== 'null') {
+                ageRatingEl.textContent = `${movieAgeRating}+`;
+                ageRatingBlock.style.display = 'block';
+                hasInfo = true;
+            }
+
             // Показываем блок если есть хоть какая-то информация
             if (hasInfo) {
                 movieInfoBlock.classList.add('visible');
             }
+        }
+
+        // Функции для автосохранения позиции
+        function getContentId() {
+            // Создаем уникальный ID для контента
+            if (kp) return `kp_${kp}_${season || 'movie'}_${episodes.join('_') || 'single'}`;
+            if (imdb) return `imdb_${imdb}_${season || 'movie'}_${episodes.join('_') || 'single'}`;
+            return `unknown_${Date.now()}`;
+        }
+
+        function saveProgress(currentTime, duration) {
+            const contentId = getContentId();
+            const progress = {
+                currentTime: currentTime,
+                duration: duration,
+                percentage: (currentTime / duration) * 100,
+                timestamp: Date.now(),
+                title: movieTitle ? decodeURIComponent(movieTitle) : 'Неизвестно'
+            };
+            localStorage.setItem(`progress_${contentId}`, JSON.stringify(progress));
+            console.log('Progress saved:', progress);
+        }
+
+        function loadProgress() {
+            const contentId = getContentId();
+            const saved = localStorage.getItem(`progress_${contentId}`);
+            if (saved) {
+                try {
+                    return JSON.parse(saved);
+                } catch (e) {
+                    console.error('Error parsing saved progress:', e);
+                }
+            }
+            return null;
+        }
+
+        function formatTime(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = Math.floor(seconds % 60);
+            
+            if (hours > 0) {
+                return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            }
+            return `${minutes}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function displayProgress(progress) {
+            const progressContainer = document.getElementById('progressContainer');
+            const progressFill = document.getElementById('progressFill');
+            const progressTime = document.getElementById('progressTime');
+            const continueButton = document.getElementById('continueButton');
+
+            if (progress && progress.percentage > 5 && progress.percentage < 95) {
+                progressFill.style.width = `${progress.percentage}%`;
+                progressTime.textContent = `${formatTime(progress.currentTime)} / ${formatTime(progress.duration)}`;
+                progressContainer.classList.add('visible');
+
+                continueButton.onclick = () => {
+                    const frame = document.getElementById('player');
+                    // Попытка отправить сообщение в iframe для перемотки
+                    try {
+                        frame.contentWindow.postMessage({
+                            type: 'seek',
+                            time: progress.currentTime
+                        }, '*');
+                    } catch (e) {
+                        console.log('Cannot seek directly, iframe restrictions');
+                    }
+                    progressContainer.style.display = 'none';
+                };
+            }
+        }
+
+        function setupProgressTracking() {
+            const frame = document.getElementById('player');
+            
+            // Слушаем сообщения от iframe плеера
+            window.addEventListener('message', (event) => {
+                if (event.data && event.data.type === 'timeupdate') {
+                    const { currentTime, duration } = event.data;
+                    if (duration > 0 && currentTime > 0) {
+                        // Сохраняем прогресс каждые 10 секунд
+                        if (Math.floor(currentTime) % 10 === 0) {
+                            saveProgress(currentTime, duration);
+                        }
+                    }
+                }
+            });
+
+            // Попытка получить прогресс через postMessage
+            setInterval(() => {
+                try {
+                    frame.contentWindow.postMessage({ type: 'getTime' }, '*');
+                } catch (e) {
+                    // Игнорируем ошибки cross-origin
+                }
+            }, 5000);
         }
 
         async function init() {
@@ -526,8 +871,15 @@
                 console.log(`📡 Тестовый URL: ${testUrl}`);
             }
             
-            // Отображаем информацию о фильме
+            // Отображаем постер и информацию о фильме
+            displayPoster();
             displayMovieInfo();
+            
+            // Загружаем и отображаем прогресс просмотра
+            const savedProgress = loadProgress();
+            if (savedProgress) {
+                displayProgress(savedProgress);
+            }
             
             try {
                 let url = iframeUrl;
@@ -567,6 +919,9 @@
                     console.log('Player loaded successfully');
                     loader.style.display = 'none';
                     status.style.display = 'none';
+                    
+                    // Настраиваем отслеживание прогресса
+                    setupProgressTracking();
                 };
                 
                 // Обработчик ошибки загрузки iframe
