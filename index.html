@@ -970,8 +970,15 @@
                 const browserUrl = currentUrl.toString();
                 console.log('Opening in browser:', browserUrl);
                 
-                // Открываем в браузере
-                window.open(browserUrl, '_blank');
+                // Используем Telegram WebApp API для принудительного открытия в браузере
+                if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openLink) {
+                    console.log('Using Telegram WebApp openLink');
+                    window.Telegram.WebApp.openLink(browserUrl);
+                } else {
+                    // Резервный вариант - обычный window.open
+                    console.log('Using fallback window.open');
+                    window.open(browserUrl, '_blank');
+                }
                 
                 // Закрываем мини-приложение Telegram
                 if (window.Telegram && window.Telegram.WebApp) {
