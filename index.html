@@ -922,7 +922,12 @@
         }
 
         function isAndroidDevice() {
-            return /Android/i.test(navigator.userAgent);
+            const isAndroid = /Android/i.test(navigator.userAgent);
+            console.log('Device check:', {
+                userAgent: navigator.userAgent,
+                isAndroid: isAndroid
+            });
+            return isAndroid;
         }
         
         function showAndroidRedirect() {
@@ -950,10 +955,23 @@
             openBrowserBtn.className = 'btn btn-telegram';
             openBrowserBtn.style.marginTop = '20px';
             openBrowserBtn.onclick = () => {
-                const currentUrl = window.location.href;
+                // Создаем обычную веб-ссылку вместо мини-приложения
+                const currentUrl = new URL(window.location.href);
+                
+                // Убираем параметры Telegram мини-приложения если они есть
+                currentUrl.searchParams.delete('tgWebAppPlatform');
+                currentUrl.searchParams.delete('tgWebAppVersion');
+                currentUrl.searchParams.delete('tgWebAppData');
+                currentUrl.searchParams.delete('tgWebAppThemeParams');
+                
+                // Добавляем параметр для принудительного показа в браузере
+                currentUrl.searchParams.set('force_browser', '1');
+                
+                const browserUrl = currentUrl.toString();
+                console.log('Opening in browser:', browserUrl);
                 
                 // Открываем в браузере
-                window.open(currentUrl, '_blank');
+                window.open(browserUrl, '_blank');
                 
                 // Закрываем мини-приложение Telegram
                 if (window.Telegram && window.Telegram.WebApp) {
@@ -1004,7 +1022,17 @@
             const status = document.getElementById('status');
             const frame = document.getElementById('player');
             
-            // Проверяем устройство в самом начале
+            // Проверяем параметр принудительного показа в браузере
+            const urlParams = new URLSearchParams(window.location.search);
+            const forceBrowser = urlParams.get('force_browser');
+            
+            if (forceBrowser) {
+                console.log('Force browser mode detected, skipping Android check');
+                continueInit();
+                return;
+            }
+            
+            // Проверяем устройство в самом начале (только если не принудительный браузер)
             if (isAndroidDevice()) {
                 console.log('Android device detected, showing redirect option');
                 showAndroidRedirect();
