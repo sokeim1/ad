@@ -447,8 +447,8 @@
             }
             
             .frame {
-                min-height: 150px;
-                max-height: 200px;
+                min-height: 200px;
+                max-height: 250px;
                 border-radius: 12px;
             }
             
@@ -486,6 +486,20 @@
                 font-size: 0.8rem;
                 padding: 3px 10px;
             }
+
+            .poster-container {
+                width: 60px !important;
+                height: 90px !important;
+            }
+
+            .extended-info {
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+
+            .info-item {
+                padding: 6px 10px;
+            }
         }
     </style>
 </head>
@@ -503,11 +517,8 @@
             <div class="loader" id="loader"></div>
             <p id="status" style="margin: 10px 0; font-size: 14px; opacity: 0.8;"></p>
             
-            <!-- Постер фильма -->
-            <div id="posterContainer" class="poster-container">
-                <img id="moviePoster" class="movie-poster" alt="Постер фильма">
-                <div id="posterPlaceholder" class="poster-placeholder">🎬</div>
-            </div>
+            <!-- Плеер вверху -->
+            <iframe id="player" class="frame" allowfullscreen referrerpolicy="no-referrer"></iframe>
 
             <!-- Прогресс просмотра -->
             <div id="progressContainer" class="progress-container">
@@ -523,21 +534,31 @@
                 </div>
             </div>
 
-            <!-- Информация о фильме -->
+            <!-- Информация о фильме внизу -->
             <div id="movieInfo" class="movie-info">
-                <div class="movie-title" id="movieTitle"></div>
-                <div class="movie-meta">
-                    <div class="meta-item" id="ratingBlock" style="display: none;">
-                        <span class="rating" id="movieRating"></span>
+                <!-- Постер и заголовок в одной строке -->
+                <div style="display: flex; gap: 15px; align-items: flex-start; margin-bottom: 15px;">
+                    <div id="posterContainer" class="poster-container" style="margin: 0; width: 80px; height: 120px; flex-shrink: 0;">
+                        <img id="moviePoster" class="movie-poster" alt="Постер фильма">
+                        <div id="posterPlaceholder" class="poster-placeholder" style="font-size: 2rem;">🎬</div>
                     </div>
-                    <div class="meta-item" id="yearBlock" style="display: none;">
-                        <span class="year" id="movieYear"></span>
-                    </div>
-                    <div class="meta-item" id="qualityBlock" style="display: none;">
-                        <span class="quality" id="movieQuality"></span>
+                    <div style="flex: 1;">
+                        <div class="movie-title" id="movieTitle"></div>
+                        <div class="movie-meta">
+                            <div class="meta-item" id="ratingBlock" style="display: none;">
+                                <span class="rating" id="movieRating"></span>
+                            </div>
+                            <div class="meta-item" id="yearBlock" style="display: none;">
+                                <span class="year" id="movieYear"></span>
+                            </div>
+                            <div class="meta-item" id="qualityBlock" style="display: none;">
+                                <span class="quality" id="movieQuality"></span>
+                            </div>
+                        </div>
+                        <div class="genre-list" id="genreList"></div>
                     </div>
                 </div>
-                <div class="genre-list" id="genreList"></div>
+                
                 <div class="movie-description" id="movieDescription"></div>
                 
                 <!-- Расширенная информация -->
@@ -560,8 +581,6 @@
                     </div>
                 </div>
             </div>
-            
-            <iframe id="player" class="frame" allowfullscreen referrerpolicy="no-referrer"></iframe>
             
             <div class="buttons-container">
                 <a href="https://t.me/kinofilmFHDbot" class="btn btn-telegram" target="_blank">
@@ -623,22 +642,34 @@
             const posterImg = document.getElementById('moviePoster');
             const posterPlaceholder = document.getElementById('posterPlaceholder');
 
-            if (moviePoster && moviePoster !== 'null') {
-                posterImg.src = decodeURIComponent(moviePoster);
+            console.log('=== POSTER DEBUG ===');
+            console.log('moviePoster param:', moviePoster);
+            console.log('posterContainer:', posterContainer);
+            console.log('posterImg:', posterImg);
+            console.log('posterPlaceholder:', posterPlaceholder);
+
+            // Всегда показываем контейнер постера
+            posterContainer.classList.add('visible');
+
+            if (moviePoster && moviePoster !== 'null' && moviePoster !== 'undefined') {
+                const posterUrl = decodeURIComponent(moviePoster);
+                console.log('Loading poster from URL:', posterUrl);
+                
+                posterImg.src = posterUrl;
                 posterImg.onload = () => {
+                    console.log('Poster loaded successfully');
                     posterPlaceholder.style.display = 'none';
                     posterImg.style.display = 'block';
-                    posterContainer.classList.add('visible');
                 };
-                posterImg.onerror = () => {
+                posterImg.onerror = (error) => {
+                    console.log('Poster failed to load:', error);
                     posterPlaceholder.style.display = 'flex';
                     posterImg.style.display = 'none';
-                    posterContainer.classList.add('visible');
                 };
             } else {
+                console.log('No poster URL provided, showing placeholder');
                 posterPlaceholder.style.display = 'flex';
                 posterImg.style.display = 'none';
-                posterContainer.classList.add('visible');
             }
         }
 
