@@ -627,15 +627,29 @@
 
         function buildUrl(base) {
             const params = [];
-            if (season) params.push(`season=${encodeURIComponent(season)}`);
-            if (Array.isArray(episodes) && episodes.length > 0) {
-                // Для сериалов используем параметр episode (без [])
-                episodes.forEach(e => params.push(`episode=${encodeURIComponent(e)}`));
+            
+            // Добавляем параметры сериала
+            if (season) {
+                params.push(`season=${encodeURIComponent(season)}`);
             }
-            if (voiceover) params.push(`voiceover=${encodeURIComponent(voiceover)}`);
+            if (episodes && episodes.length > 0) {
+                episodes.forEach(ep => {
+                    params.push(`episode=${encodeURIComponent(ep)}`);
+                });
+            }
+            if (voiceover) {
+                params.push(`voiceover=${encodeURIComponent(voiceover)}`);
+            }
+            
             if (!params.length) return base;
             const sep = base.includes('?') ? '&' : '?';
             return base + sep + params.join('&');
+        }
+
+        function addPlayerDesign(url) {
+            // Добавляем дизайн "Синий Неон" к URL плеера
+            const separator = url.includes('?') ? '&' : '?';
+            return url + separator + 'design=3';
         }
 
         function displayPoster() {
@@ -936,6 +950,10 @@
                 // Строим финальный URL с параметрами сериала
                 const originalUrl = url;
                 url = buildUrl(url);
+                
+                // Добавляем дизайн "Синий Неон"
+                url = addPlayerDesign(url);
+                
                 console.log('Original URL:', originalUrl);
                 console.log('Final player URL:', url);
                 console.log('Built URL params:', { season, episodes, voiceover });
