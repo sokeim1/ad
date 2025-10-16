@@ -921,7 +921,71 @@
             }, 5000);
         }
 
+        function isAndroidDevice() {
+            return /Android/i.test(navigator.userAgent);
+        }
+        
+        function showAndroidRedirect() {
+            const loader = document.getElementById('loader');
+            const status = document.getElementById('status');
+            const frame = document.getElementById('player');
+            
+            loader.style.display = 'none';
+            frame.style.display = 'none';
+            
+            status.innerHTML = `
+                📱 Android устройство обнаружено<br>
+                <small style="opacity: 0.8; line-height: 1.4; margin: 10px 0; display: block;">
+                    Для лучшего воспроизведения рекомендуем<br>
+                    открыть плеер в браузере
+                </small>
+            `;
+            status.style.color = '#4ecdc4';
+            status.style.display = 'block';
+            
+            // Добавляем кнопку открытия в браузере
+            const openBrowserBtn = document.createElement('button');
+            openBrowserBtn.textContent = '🌐 Открыть в браузере';
+            openBrowserBtn.className = 'btn btn-telegram';
+            openBrowserBtn.style.marginTop = '20px';
+            openBrowserBtn.onclick = () => {
+                const currentUrl = window.location.href;
+                window.open(currentUrl, '_blank');
+            };
+            
+            // Добавляем кнопку "Все равно смотреть здесь"
+            const stayBtn = document.createElement('button');
+            stayBtn.textContent = '📺 Смотреть в Telegram';
+            stayBtn.className = 'btn btn-channel';
+            stayBtn.style.marginTop = '10px';
+            stayBtn.onclick = () => {
+                // Скрываем сообщение и запускаем обычную инициализацию
+                status.style.display = 'none';
+                frame.style.display = 'block';
+                continueInit();
+            };
+            
+            status.appendChild(openBrowserBtn);
+            status.appendChild(stayBtn);
+        }
+
         async function init() {
+            const loader = document.getElementById('loader');
+            const status = document.getElementById('status');
+            const frame = document.getElementById('player');
+            
+            // Проверяем устройство в самом начале
+            if (isAndroidDevice()) {
+                console.log('Android device detected, showing redirect option');
+                showAndroidRedirect();
+                return; // Останавливаем обычную инициализацию
+            }
+            
+            // Продолжаем обычную инициализацию для не-Android устройств
+            continueInit();
+        }
+        
+        async function continueInit() {
             const loader = document.getElementById('loader');
             const status = document.getElementById('status');
             const frame = document.getElementById('player');
