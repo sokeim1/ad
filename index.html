@@ -101,6 +101,12 @@
             box-shadow: 0 0 15px rgba(78, 205, 196, 0.3);
         }
 
+        .player-wrapper {
+            position: relative;
+            width: 100%;
+            margin: 10px 0;
+        }
+
         .frame {
             width: 100%;
             max-width: 100%;
@@ -111,9 +117,38 @@
                 0 15px 30px rgba(0,0,0,0.2),
                 0 0 0 1px rgba(255,255,255,0.1);
             background: #000;
-            margin: 10px 0;
             min-height: 180px;
             max-height: 300px;
+        }
+
+        .external-fullscreen-btn {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            z-index: 100;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 8px;
+            width: 45px;
+            height: 45px;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .external-fullscreen-btn:hover {
+            background: rgba(0,0,0,0.9);
+            border-color: rgba(255,255,255,0.6);
+            transform: scale(1.1);
+        }
+
+        .external-fullscreen-btn:active {
+            transform: scale(0.95);
         }
 
         .note {
@@ -519,17 +554,20 @@
             <p id="status" style="margin: 10px 0; font-size: 14px; opacity: 0.8;"></p>
             
             <!-- Плеер вверху -->
-            <iframe id="player" class="frame" 
-                    allowfullscreen 
-                    referrerpolicy="no-referrer"
-                    allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer"
-                    loading="lazy"
-                    frameborder="0"
-                    scrolling="no"
-                    webkitallowfullscreen="true"
-                    mozallowfullscreen="true"
-                    msallowfullscreen="true"
-                    oallowfullscreen="true"></iframe>
+            <div class="player-wrapper">
+                <iframe id="player" class="frame" 
+                        allowfullscreen 
+                        referrerpolicy="no-referrer"
+                        allow="autoplay; fullscreen; picture-in-picture; encrypted-media; gyroscope; accelerometer"
+                        loading="lazy"
+                        frameborder="0"
+                        scrolling="no"
+                        webkitallowfullscreen="true"
+                        mozallowfullscreen="true"
+                        msallowfullscreen="true"
+                        oallowfullscreen="true"></iframe>
+                <button id="externalFullscreenBtn" class="external-fullscreen-btn" title="Полный экран">⛶</button>
+            </div>
 
             <!-- Прогресс просмотра -->
             <div id="progressContainer" class="progress-container">
@@ -1005,6 +1043,9 @@
                     // Добавляем обработчик двойного клика для полноэкранного режима
                     setupPlayerInteraction();
                     
+                    // Добавляем обработчик для внешней кнопки полноэкранного режима
+                    setupExternalFullscreenButton();
+                    
                     // Проверяем, что iframe действительно загрузился (для Android)
                     setTimeout(() => {
                         checkIframeContent();
@@ -1061,6 +1102,34 @@
                     }, 400);
                 }
             }, 3000);
+        }
+
+        // Настройка внешней кнопки полноэкранного режима
+        function setupExternalFullscreenButton() {
+            const externalBtn = document.getElementById('externalFullscreenBtn');
+            if (!externalBtn) {
+                console.warn('External fullscreen button not found');
+                return;
+            }
+            
+            console.log('Setting up external fullscreen button');
+            
+            // Обработчик клика
+            externalBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('External fullscreen button clicked');
+                toggleFullscreen();
+            });
+            
+            // Тактильная обратная связь для мобильных
+            externalBtn.addEventListener('touchstart', () => {
+                externalBtn.style.transform = 'scale(0.9)';
+            });
+            
+            externalBtn.addEventListener('touchend', () => {
+                externalBtn.style.transform = 'scale(1)';
+            });
         }
 
         // Поддержка полноэкранного режима для Android
@@ -1214,6 +1283,12 @@
                     }
                 });
                 
+                // Скрываем внешнюю кнопку полноэкранного режима
+                const externalBtn = document.getElementById('externalFullscreenBtn');
+                if (externalBtn) {
+                    externalBtn.style.display = 'none';
+                }
+                
                 // Добавляем кнопку выхода
                 addExitButton();
             }
@@ -1338,6 +1413,12 @@
                     el.style.display = '';
                 }
             });
+            
+            // Показываем внешнюю кнопку полноэкранного режима обратно
+            const externalBtn = document.getElementById('externalFullscreenBtn');
+            if (externalBtn) {
+                externalBtn.style.display = 'flex';
+            }
             
             // Удаляем кнопку выхода
             const exitBtn = document.getElementById('exitFullscreenBtn');
