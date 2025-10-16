@@ -628,6 +628,40 @@
             }
         }
         
+        // 🔒 БЛОКИРУЕМ СТАНДАРТНЫЙ FULLSCREEN API
+        // Это предотвращает перехват Telegram'ом и заставляет использовать наш метод
+        (function blockNativeFullscreen() {
+            console.log('🔒 Blocking native fullscreen API');
+            
+            // Переопределяем requestFullscreen для всех элементов
+            if (Element.prototype.requestFullscreen) {
+                Element.prototype.requestFullscreen = function() {
+                    console.log('⚠️ Native fullscreen blocked, using custom method');
+                    // Вместо стандартного fullscreen вызываем наш
+                    tryAlternativeFullscreen();
+                    return Promise.resolve();
+                };
+            }
+            
+            if (Element.prototype.webkitRequestFullscreen) {
+                Element.prototype.webkitRequestFullscreen = function() {
+                    console.log('⚠️ WebKit fullscreen blocked, using custom method');
+                    tryAlternativeFullscreen();
+                    return Promise.resolve();
+                };
+            }
+            
+            if (Element.prototype.mozRequestFullScreen) {
+                Element.prototype.mozRequestFullScreen = function() {
+                    console.log('⚠️ Mozilla fullscreen blocked, using custom method');
+                    tryAlternativeFullscreen();
+                    return Promise.resolve();
+                };
+            }
+            
+            console.log('✅ Native fullscreen API blocked successfully');
+        })();
+        
         function getParam(name) {
             const url = new URL(window.location.href);
             return url.searchParams.get(name);
@@ -1161,50 +1195,10 @@
         
         function enterFullscreen() {
             const frame = document.getElementById('player');
-            console.log('Attempting to enter fullscreen mode');
-            console.log('User agent:', navigator.userAgent);
-            console.log('Is Android:', isAndroidDevice());
+            console.log('🎬 Custom fullscreen activated');
             
-            // На Android в Telegram WebView стандартный fullscreen API часто не работает
-            // Поэтому сразу используем альтернативный метод
-            if (isAndroidDevice() && window.Telegram && window.Telegram.WebApp) {
-                console.log('Android + Telegram detected, using alternative fullscreen');
-                tryAlternativeFullscreen();
-                return;
-            }
-            
-            try {
-                // Стандартный метод для iOS и десктопа
-                if (frame.requestFullscreen) {
-                    frame.requestFullscreen().catch(err => {
-                        console.log('Standard fullscreen failed:', err);
-                        tryAlternativeFullscreen();
-                    });
-                }
-                // WebKit (Safari, iOS)
-                else if (frame.webkitRequestFullscreen) {
-                    frame.webkitRequestFullscreen();
-                }
-                // WebKit с параметрами (iOS Safari)
-                else if (frame.webkitEnterFullscreen) {
-                    frame.webkitEnterFullscreen();
-                }
-                // Mozilla
-                else if (frame.mozRequestFullScreen) {
-                    frame.mozRequestFullScreen();
-                }
-                // IE/Edge
-                else if (frame.msRequestFullscreen) {
-                    frame.msRequestFullscreen();
-                }
-                // Fallback
-                else {
-                    tryAlternativeFullscreen();
-                }
-            } catch (error) {
-                console.error('Fullscreen error:', error);
-                tryAlternativeFullscreen();
-            }
+            // ВСЕГДА используем наш CSS-метод, игнорируя Telegram
+            tryAlternativeFullscreen();
         }
         
         function exitFullscreen() {
@@ -1226,22 +1220,25 @@
         }
         
         function toggleFullscreen() {
-            console.log('Toggling fullscreen mode');
+            console.log('🔄 Toggle fullscreen');
             
-            const isFullscreen = document.fullscreenElement || 
-                                document.webkitFullscreenElement || 
-                                document.mozFullScreenElement || 
-                                document.msFullscreenElement;
+            // Проверяем, в нашем ли fullscreen мы находимся
+            const frame = document.getElementById('player');
+            const isInCustomFullscreen = frame && 
+                frame.style.position === 'fixed' && 
+                frame.style.zIndex === '999999';
             
-            if (isFullscreen) {
-                exitFullscreen();
+            if (isInCustomFullscreen) {
+                // Выходим из нашего fullscreen
+                restoreNormalView();
             } else {
-                enterFullscreen();
+                // Входим в наш fullscreen
+                tryAlternativeFullscreen();
             }
         }
         
         function tryAlternativeFullscreen() {
-            console.log('Trying alternative fullscreen methods for Android');
+            console.log('🚀 Starting custom CSS fullscreen');
             const frame = document.getElementById('player');
             
             // Попытка через изменение стилей (для Android WebView)
