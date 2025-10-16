@@ -566,7 +566,7 @@
                         mozallowfullscreen="true"
                         msallowfullscreen="true"
                         oallowfullscreen="true"></iframe>
-                <button id="externalFullscreenBtn" class="external-fullscreen-btn" title="Полный экран">⛶</button>
+                <!-- Внешняя кнопка убрана - используем встроенную кнопку плеера -->
             </div>
 
             <!-- Прогресс просмотра -->
@@ -1043,9 +1043,6 @@
                     // Добавляем обработчик двойного клика для полноэкранного режима
                     setupPlayerInteraction();
                     
-                    // Добавляем обработчик для внешней кнопки полноэкранного режима
-                    setupExternalFullscreenButton();
-                    
                     // Проверяем, что iframe действительно загрузился (для Android)
                     setTimeout(() => {
                         checkIframeContent();
@@ -1136,23 +1133,58 @@
         function setupFullscreenSupport() {
             const frame = document.getElementById('player');
             
-            // Обработка сообщений от iframe плеера
+            // ВАРИАНТ 1: Обработка сообщений от iframe плеера (postMessage)
             window.addEventListener('message', (event) => {
-                console.log('Received message from iframe:', event.data);
+                console.log('📨 Received message from iframe:', event.data);
                 
-                // Обработка запроса на полноэкранный режим
-                if (event.data && event.data.type === 'requestFullscreen') {
-                    enterFullscreen();
+                // Перехватываем различные варианты сообщений о fullscreen
+                const isFullscreenRequest = 
+                    (event.data && event.data.type === 'requestFullscreen') ||
+                    (event.data && event.data.type === 'fullscreen') ||
+                    (event.data && event.data.action === 'fullscreen') ||
+                    (event.data === 'fullscreen') ||
+                    (event.data && event.data.event === 'fullscreen') ||
+                    (event.data && event.data.method === 'requestFullscreen');
+                
+                if (isFullscreenRequest) {
+                    console.log('🎬 Fullscreen request detected from player');
+                    
+                    // На Android сразу используем альтернативный метод
+                    if (isAndroidDevice() && window.Telegram && window.Telegram.WebApp) {
+                        console.log('📱 Android detected, using alternative fullscreen');
+                        event.preventDefault?.();
+                        tryAlternativeFullscreen();
+                    } else {
+                        // На iOS используем стандартный метод
+                        console.log('🍎 iOS/Desktop detected, using standard fullscreen');
+                        enterFullscreen();
+                    }
+                    return;
                 }
                 
                 // Обработка выхода из полноэкранного режима
-                if (event.data && event.data.type === 'exitFullscreen') {
+                if (event.data && (event.data.type === 'exitFullscreen' || event.data.action === 'exitFullscreen')) {
+                    console.log('🚪 Exit fullscreen request');
                     exitFullscreen();
                 }
+            });
+            
+            // ВАРИАНТ 2: Обработка ошибок fullscreen API
+            // Когда iframe пытается войти в fullscreen, но не может (Android)
+            document.addEventListener('fullscreenerror', (event) => {
+                console.log('❌ Fullscreen error detected, trying alternative method');
                 
-                // Обработка клика по кнопке полноэкранного режима в плеере
-                if (event.data && (event.data.action === 'fullscreen' || event.data.type === 'fullscreen')) {
-                    toggleFullscreen();
+                // Если стандартный fullscreen не сработал на Android
+                if (isAndroidDevice()) {
+                    console.log('📱 Using alternative fullscreen after error');
+                    tryAlternativeFullscreen();
+                }
+            });
+            
+            document.addEventListener('webkitfullscreenerror', (event) => {
+                console.log('❌ WebKit fullscreen error detected');
+                if (isAndroidDevice()) {
+                    tryAlternativeFullscreen();
                 }
             });
             
@@ -1161,6 +1193,35 @@
             document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
             document.addEventListener('mozfullscreenchange', handleFullscreenChange);
             document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+            
+            // Дополнительно: отслеживаем попытки iframe войти в fullscreen
+            if (frame) {
+                // Перехватываем события от iframe
+                frame.addEventListener('load', () => {
+                    console.log('🎬 Player iframe loaded, setting up fullscreen monitoring');
+                    
+                    // Пытаемся отследить клики по iframe (для перехвата кнопки fullscreen)
+                    frame.addEventListener('click', () => {
+                        console.log('🖱️ Click detected on iframe');
+                        
+                        // Небольшая задержка, чтобы дать время плееру попытаться войти в fullscreen
+                        setTimeout(() => {
+                            // Проверяем, вошли ли мы в fullscreen
+                            const isInFullscreen = document.fullscreenElement || 
+                                                  document.webkitFullscreenElement || 
+                                                  document.mozFullScreenElement;
+                            
+                            // Если не вошли, но это Android - используем альтернативный метод
+                            if (!isInFullscreen && isAndroidDevice()) {
+                                console.log('⚠️ Click on iframe but no fullscreen - might be fullscreen button');
+                                // Не запускаем автоматически, т.к. это может быть обычный клик
+                            }
+                        }, 100);
+                    });
+                });
+            }
+            
+            console.log('✅ Fullscreen support initialized (Variant 1 + 2)');
         }
         
         function enterFullscreen() {
@@ -1282,12 +1343,6 @@
                         el.style.display = 'none';
                     }
                 });
-                
-                // Скрываем внешнюю кнопку полноэкранного режима
-                const externalBtn = document.getElementById('externalFullscreenBtn');
-                if (externalBtn) {
-                    externalBtn.style.display = 'none';
-                }
                 
                 // Добавляем кнопку выхода
                 addExitButton();
@@ -1413,12 +1468,6 @@
                     el.style.display = '';
                 }
             });
-            
-            // Показываем внешнюю кнопку полноэкранного режима обратно
-            const externalBtn = document.getElementById('externalFullscreenBtn');
-            if (externalBtn) {
-                externalBtn.style.display = 'flex';
-            }
             
             // Удаляем кнопку выхода
             const exitBtn = document.getElementById('exitFullscreenBtn');
